@@ -1,12 +1,13 @@
 import os
 import argparse
-from glob import glob
+from glob import glob 
+from tqdm import tqdm 
 from ultralytics import YOLO
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='runs/pose/yolov8n-face/weights/best.pt', help='model.pt path(s)')
-    parser.add_argument('--img-size', nargs= '+', type=int, default=320, help='inference size (pixels)')
+    parser.add_argument('--img-size', nargs= '+', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf-thres', type=float, default=0.01, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
     parser.add_argument('--device', type=str, default='cpu', help='augmented inference')
@@ -18,19 +19,12 @@ if __name__ == '__main__':
 
     model = YOLO(opt.weights)
 
-    # testing dataset
-    testset_folder = opt.dataset_folder
-    # testset_list = opt.dataset_folder[:-7] + "wider_val.txt"
-    # with open(testset_list, 'r') as fr:
-    #     test_dataset = fr.read().split()
-    #     num_images = len(test_dataset)
-    test_dataset = glob(testset_folder)
-    for image_path in test_dataset:
-        # image_path = testset_folder + img_name
-        img_name = "/".join(image_path.split("/")[-2:])
-        print(image_path)
-        results = model.predict(source=image_path, imgsz=opt.img_size, conf=opt.conf_thres, iou=opt.iou_thres, augment=opt.augment, device=opt.device)
+    # testing dataset    
+    test_dataset = glob(opt.dataset_folder)
 
+    for image_path in test_dataset:        
+        results = model.predict(source=image_path, imgsz=opt.img_size, conf=opt.conf_thres, iou=opt.iou_thres, augment=opt.augment, device=opt.device)
+        img_name = image_path.split("/")[-2] + "/" + os.path.basename(image_path)
         save_name = opt.save_folder + img_name[:-4] + ".txt"
         dirname = os.path.dirname(save_name)
         if not os.path.isdir(dirname):
@@ -50,3 +44,4 @@ if __name__ == '__main__':
                 x2 = int(xyxy[2] + 0.5)
                 y2 = int(xyxy[3] + 0.5)
                 fd.write('%d %d %d %d %.03f' % (x1, y1, x2-x1, y2-y1, conf if conf <= 1 else 1) + '\n')
+        
